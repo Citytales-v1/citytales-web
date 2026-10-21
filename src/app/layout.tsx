@@ -10,6 +10,8 @@ import SmoothScroll from "@/components/motion/SmoothScroll";
  */
 
 export const metadata: Metadata = {
+  // Lets relative og:image / og:url values resolve to absolute https://citytales.in URLs.
+  metadataBase: new URL("https://citytales.in"),
   title: "CityTales | What's On",
   description:
     "Markets, gigs, workshops, and meetups — find out what's happening around you before everyone else does.",

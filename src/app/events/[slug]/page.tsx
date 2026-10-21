@@ -20,9 +20,27 @@ export async function generateMetadata({
   const { slug } = await params;
   const event = await getEventById(slug);
   if (!event) return { title: "Event not found | CityTales" };
+  const title = `${event.title} | CityTales`;
+  // Chat apps (WhatsApp, iMessage, Slack) read these tags for the link preview. Without an
+  // og:image they fall back to the site favicon, which is what shared links used to show.
+  const description = (event.description || event.whenLabel || "").slice(0, 200) || undefined;
   return {
-    title: `${event.title} | CityTales`,
-    description: event.description || event.whenLabel || undefined,
+    title,
+    description,
+    openGraph: {
+      type: "website",
+      siteName: "CityTales",
+      url: `/events/${slug}`,
+      title,
+      description,
+      images: event.coverImage ? [{ url: event.coverImage, alt: event.title }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: event.coverImage ? [event.coverImage] : undefined,
+    },
   };
 }
 
