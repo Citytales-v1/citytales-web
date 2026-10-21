@@ -19,7 +19,7 @@ export default async function EventCategories() {
     id: category.id,
     name: category.name,
     label: category.label,
-    image: categoryCoverImage(category.name, category.imageUrl),
+    image: categoryCoverImage(category.imageUrl),
   }));
 
   return (

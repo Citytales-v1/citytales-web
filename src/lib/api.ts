@@ -715,7 +715,14 @@ export type EventCategory = {
   name: string;
   /** Short display label, e.g. "Wellness" */
   label: string;
-  imageUrl: string;
+  /** Backend cover image; null when none is set. */
+  imageUrl: string | null;
+};
+
+type ApiEventCategory = ApiCategory & {
+  imageUrl?: string | null;
+  /** Admin-set display order; categories without one keep the backend's order, after those with one. */
+  sequence?: number | null;
 };
 
 /**
@@ -759,18 +766,24 @@ export async function getEventCategories(): Promise<EventCategory[]> {
       return FALLBACK_EVENT_CATEGORIES;
     }
 
-    const items = (json as ApiCategory[])
-      .filter(
-        (c): c is ApiCategory & { imageUrl: string } =>
-          typeof c?.id === "string" &&
-          typeof c?.name === "string" &&
-          typeof (c as { imageUrl?: unknown }).imageUrl === "string",
-      )
+    const bySequence = (a: ApiEventCategory, b: ApiEventCategory) => {
+      const sa = typeof a.sequence === "number" ? a.sequence : null;
+      const sb = typeof b.sequence === "number" ? b.sequence : null;
+      if (sa === sb) return 0;
+      if (sa === null) return 1;
+      if (sb === null) return -1;
+      return sa - sb;
+    };
+
+    const items = (json as ApiEventCategory[])
+      .filter((c) => typeof c?.id === "string" && typeof c?.name === "string")
+      // Array.prototype.sort is stable, so ties keep the backend's order.
+      .sort(bySequence)
       .map<EventCategory>((c) => ({
         id: c.id,
         name: c.name,
         label: c.label?.trim() || c.name,
-        imageUrl: (c as unknown as { imageUrl: string }).imageUrl,
+        imageUrl: typeof c.imageUrl === "string" && c.imageUrl.trim() ? c.imageUrl : null,
       }));
 
     return items.length > 0 ? items : FALLBACK_EVENT_CATEGORIES;

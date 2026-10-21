@@ -146,7 +146,7 @@ export default async function ExploreEventsPage({
     id: c.id,
     name: c.name,
     label: c.label,
-    image: categoryCoverImage(c.name, c.imageUrl),
+    image: categoryCoverImage(c.imageUrl),
   }));
 
   return (
