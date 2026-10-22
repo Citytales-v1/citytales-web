@@ -2,6 +2,14 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
+    /**
+     * Serve images straight from CloudFront instead of Vercel's /_next/image
+     * optimizer. The Hobby plan's monthly image-transformation quota ran out
+     * (402 OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED), which broke every event
+     * cover that hadn't already been cached. Remove this if the project moves
+     * to a plan with enough optimization quota.
+     */
+    unoptimized: true,
     remotePatterns: [
       {
         // Organiser + event cover images served from the CityTales CDN
