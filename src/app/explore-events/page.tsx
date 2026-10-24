@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
+import { permanentRedirect, redirect } from "next/navigation";
 import ExploreEventsClient, {
   type ExploreSort,
   type ExploreWhen,
@@ -7,6 +7,7 @@ import ExploreEventsClient, {
 import PageShell from "@/components/PageShell";
 import {
   getBrowseAllEvents,
+  findCategoryByParam,
   getEventCategories,
   getMonthSectionEvents,
   type SectionSort,
@@ -80,7 +81,7 @@ function toApiSort(sort: ExploreSort): SectionSort | undefined {
  *
  * `?when=today|tomorrow|weekend|this-week|next-week|later|all`
  * `?from=` still accepted (maps to when)
- * `?category=<id>` — vibe / chip filter (combined with when)
+ * `?category=<slug>` (old `<id>` links redirect) — vibe / chip filter (combined with when)
  * `?sort=recent|soonest|latest` — ignored for today/tomorrow (backend sorts by start time)
  *
  * Browse all uses POST /api/v1/event/filter/v2 (not section GETs).
@@ -122,8 +123,18 @@ export default async function ExploreEventsPage({
 
   const categories = await getEventCategories();
   const selectedCategory = categoryParam
-    ? categories.find((c) => c.id === categoryParam)
+    ? findCategoryByParam(categories, categoryParam)
     : undefined;
+
+  // Old links used the category id (or odd casing): send them to the slug URL.
+  if (selectedCategory && categoryParam !== selectedCategory.slug) {
+    const query = new URLSearchParams();
+    if (whenParam) query.set("when", whenParam);
+    if (from) query.set("from", from);
+    query.set("category", selectedCategory.slug);
+    if (sortParam) query.set("sort", sortParam);
+    permanentRedirect(`/explore-events?${query.toString()}`);
+  }
   const categoryId = selectedCategory?.id;
 
   const section = WHEN_TO_SECTION[when] ?? WHEN_TO_SECTION.all!;
@@ -146,6 +157,7 @@ export default async function ExploreEventsPage({
     id: c.id,
     name: c.name,
     label: c.label,
+    slug: c.slug,
     image: categoryCoverImage(c.imageUrl),
   }));
 

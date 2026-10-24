@@ -717,6 +717,8 @@ export type EventCategory = {
   label: string;
   /** Backend cover image; null when none is set. */
   imageUrl: string | null;
+  /** URL-safe slug derived from `name`, unique within the list (e.g. "music-parties"). */
+  slug: string;
 };
 
 type ApiEventCategory = ApiCategory & {
@@ -725,12 +727,45 @@ type ApiEventCategory = ApiCategory & {
   sequence?: number | null;
 };
 
+/** "Music & Parties" -> "music-parties". */
+export function slugifyCategoryName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+/**
+ * Adds a unique `slug` to each category. Slugs come from the name; if two
+ * names collide (or one slugifies to nothing) the id's tail keeps them distinct.
+ */
+function withSlugs(items: Omit<EventCategory, "slug">[]): EventCategory[] {
+  const seen = new Set<string>();
+  return items.map((c) => {
+    let slug = slugifyCategoryName(c.name);
+    if (!slug || seen.has(slug)) {
+      slug = `${slug || "category"}-${c.id.slice(-4).toLowerCase()}`;
+    }
+    seen.add(slug);
+    return { ...c, slug };
+  });
+}
+
+/** Finds a category by slug (current URLs) or id (old links). */
+export function findCategoryByParam(
+  categories: EventCategory[],
+  param: string,
+): EventCategory | undefined {
+  const lower = param.toLowerCase();
+  return categories.find((c) => c.slug === lower || c.id === param);
+}
+
 /**
  * Used only if the category endpoint is unreachable. These are taxonomy
  * labels, not event claims, so showing them during an outage is safe —
  * they point at local placeholder imagery rather than inventing listings.
  */
-const FALLBACK_EVENT_CATEGORIES: EventCategory[] = [
+const FALLBACK_EVENT_CATEGORIES: EventCategory[] = withSlugs([
   { id: "f-club", name: "Community Clubs", label: "Club", imageUrl: "/images/events/cat-community-clubs-v3.jpg" },
   { id: "f-exhibition", name: "Exhibition", label: "Exhibition", imageUrl: "/images/events/cat-exhibition-bust.jpg" },
   { id: "f-festive", name: "Festive", label: "Festive", imageUrl: "/images/events/cat-festive-diya.jpg" },
@@ -739,7 +774,7 @@ const FALLBACK_EVENT_CATEGORIES: EventCategory[] = [
   { id: "f-live", name: "Live Shows", label: "Live Shows", imageUrl: "/images/events/cat-live-shows-mic.jpg" },
   { id: "f-music", name: "Music & Parties", label: "Music", imageUrl: "/images/events/cat-music-disco.jpg" },
   { id: "f-workshops", name: "Workshops & Activities", label: "Workshops", imageUrl: "/images/events/cat-workshops-smiley.jpg" },
-];
+]);
 
 /**
  * Fetches the EVENT category taxonomy, each with its own cover image.
@@ -775,16 +810,18 @@ export async function getEventCategories(): Promise<EventCategory[]> {
       return sa - sb;
     };
 
-    const items = (json as ApiEventCategory[])
+    const items = withSlugs(
+      (json as ApiEventCategory[])
       .filter((c) => typeof c?.id === "string" && typeof c?.name === "string")
       // Array.prototype.sort is stable, so ties keep the backend's order.
       .sort(bySequence)
-      .map<EventCategory>((c) => ({
+      .map<Omit<EventCategory, "slug">>((c) => ({
         id: c.id,
         name: c.name,
         label: c.label?.trim() || c.name,
         imageUrl: typeof c.imageUrl === "string" && c.imageUrl.trim() ? c.imageUrl : null,
-      }));
+      })),
+    );
 
     return items.length > 0 ? items : FALLBACK_EVENT_CATEGORIES;
   } catch (error) {

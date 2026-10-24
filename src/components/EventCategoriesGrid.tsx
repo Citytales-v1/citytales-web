@@ -9,6 +9,7 @@ export type CategoryTile = {
   id: string;
   name: string;
   label: string;
+  slug: string;
   image: string;
 };
 
@@ -43,7 +44,7 @@ export default function EventCategoriesGrid({
               transition={{ duration: 0.28, ease: EASE }}
             >
               <Link
-                href={`/explore-events?category=${encodeURIComponent(tile.id)}`}
+                href={`/explore-events?category=${encodeURIComponent(tile.slug)}`}
                 className="group block no-underline"
               >
                 <div className="relative aspect-[16/10] overflow-hidden rounded-[8px] lg:rounded-[10px]">

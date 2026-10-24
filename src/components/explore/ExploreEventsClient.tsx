@@ -18,6 +18,7 @@ export type ExploreCategory = {
   id: string;
   name: string;
   label: string;
+  slug: string;
   image: string;
 };
 
@@ -330,7 +331,13 @@ export default function ExploreEventsClient({
 
     const category =
       next.category !== undefined ? next.category : activeCategoryId;
-    if (category && category !== "all") params.set("category", category);
+    if (category && category !== "all") {
+      // URLs carry the slug; state/API keep using the id.
+      params.set(
+        "category",
+        categories.find((cat) => cat.id === category)?.slug ?? category,
+      );
+    }
 
     const sortLocked = nextWhen === "today" || nextWhen === "tomorrow";
     const nextSort = sortLocked
