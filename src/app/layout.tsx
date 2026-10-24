@@ -3,6 +3,7 @@ import "./globals.css";
 import { AuthProvider } from "@/components/auth/AuthContext";
 import MotionProvider from "@/components/motion/MotionProvider";
 import SmoothScroll from "@/components/motion/SmoothScroll";
+import { Analytics } from "@vercel/analytics/next";
 
 /**
  * Helvetica Neue is used site-wide, for body copy and the headings that use
@@ -26,6 +27,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <SmoothScroll />
           <AuthProvider>{children}</AuthProvider>
         </MotionProvider>
+        <Analytics />
       </body>
     </html>
   );
